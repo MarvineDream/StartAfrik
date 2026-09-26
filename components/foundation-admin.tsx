@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { Activity, Building2, ChevronDown, ClipboardList, FileText, KeyRound, LayoutDashboard, LogOut, Menu, Plus, Search, ShieldCheck, Users, X } from "lucide-react"
 
 type Role = "SUPER_ADMIN" | "AGENCY_ADMIN" | "BRANCH_ADMIN" | "BRANCH_AGENT" | "DRIVER"
@@ -19,18 +19,49 @@ const nav = [
 
 function useApi() {
   const [token, setToken] = useState<string | null>(null)
+  const refreshPromise = useRef<Promise<string | null> | null>(null)
+
   useEffect(() => setToken(window.sessionStorage.getItem("startafrik_access_token")), [])
-  const request = async (path: string, options?: RequestInit, alreadyRefreshed = false) => {
-    const response = await fetch(`${API_URL}${path}`, { ...options, credentials: "include", headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(options?.headers || {}) } })
-    if (response.status === 401 && !alreadyRefreshed && path !== "/api/auth/refresh") {
-      const refreshed = await fetch(`${API_URL}/api/auth/refresh`, { method: "POST", credentials: "include" })
-      if (refreshed.ok) { const body = await refreshed.json(); window.sessionStorage.setItem("startafrik_access_token", body.accessToken); setToken(body.accessToken); return request(path, options, true) }
-      window.sessionStorage.removeItem("startafrik_access_token"); setToken(null); throw new Error("UNAUTHORIZED")
+
+  const clearSession = () => {
+    window.sessionStorage.removeItem("startafrik_access_token")
+    setToken(null)
+  }
+
+  const refreshAccessToken = () => {
+    if (!refreshPromise.current) {
+      refreshPromise.current = fetch(`${API_URL}/api/auth/refresh`, { method: "POST", credentials: "include" })
+        .then(async (response) => {
+          if (!response.ok) return null
+          const body = await response.json()
+          const nextToken = body.accessToken || body.access_token
+          if (!nextToken) return null
+          window.sessionStorage.setItem("startafrik_access_token", nextToken)
+          setToken(nextToken)
+          return nextToken
+        })
+        .finally(() => { refreshPromise.current = null })
     }
-    if (response.status === 401) { window.sessionStorage.removeItem("startafrik_access_token"); setToken(null); throw new Error("UNAUTHORIZED") }
+    return refreshPromise.current
+  }
+
+  const request = async (path: string, options?: RequestInit, requestToken = token, alreadyRefreshed = false) => {
+    const response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      credentials: "include",
+      headers: { "Content-Type": "application/json", ...(requestToken ? { Authorization: `Bearer ${requestToken}` } : {}), ...(options?.headers || {}) },
+    })
+    if (response.status === 401 && !alreadyRefreshed && path !== "/api/auth/refresh") {
+      const nextToken = await refreshAccessToken()
+      if (nextToken) return request(path, options, nextToken, true)
+      clearSession()
+      throw new Error("UNAUTHORIZED")
+    }
+    if (response.status === 401) { clearSession(); throw new Error("UNAUTHORIZED") }
     if (!response.ok) throw new Error(response.status === 403 ? "FORBIDDEN" : "BACKEND_UNAVAILABLE")
     return response.json()
   }
+
   return { token, setToken, request }
 }
 
