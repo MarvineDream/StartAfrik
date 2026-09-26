@@ -1,0 +1,22 @@
+export const PERMISSIONS = {
+  AGENCY_READ: 'agency:read',
+  AGENCY_CREATE: 'agency:create',
+  AGENCY_UPDATE: 'agency:update',
+  AGENCY_DELETE: 'agency:delete',
+  BRANCH_READ: 'branch:read',
+  BRANCH_CREATE: 'branch:create',
+  BRANCH_UPDATE: 'branch:update',
+  BRANCH_DELETE: 'branch:delete',
+  USER_READ: 'user:read',
+  USER_CREATE: 'user:create',
+  USER_UPDATE: 'user:update',
+  USER_DELETE: 'user:delete',
+  ROLE_READ: 'role:read',
+  PERMISSION_READ: 'permission:read',
+  AUDIT_READ: 'audit:read',
+  DASHBOARD_PLATFORM: 'dashboard:platform',
+  DASHBOARD_AGENCY: 'dashboard:agency',
+  DASHBOARD_BRANCH: 'dashboard:branch',
+} as const
+
+export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]
