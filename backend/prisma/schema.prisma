@@ -24,6 +24,20 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum VehicleStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+}
+
+enum VehicleType {
+  BUS
+  MINIBUS
+  VAN
+  CAR
+  OTHER
+}
+
 enum SystemRole {
   SUPER_ADMIN
   AGENCY_ADMIN
@@ -45,6 +59,7 @@ model Agency {
   status    AgencyStatus @default(ACTIVE)
   branches  Branch[]
   users     User[]
+  vehicles  Vehicle[]
   audits    AuditLog[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
@@ -64,6 +79,7 @@ model Branch {
   email     String?
   status    BranchStatus @default(ACTIVE)
   users     User[]
+  vehicles  Vehicle[]
   audits    AuditLog[]
   createdAt DateTime     @default(now())
   updatedAt DateTime     @updatedAt
@@ -148,6 +164,29 @@ model AuditLog {
   @@index([branchId])
   @@index([userId])
   @@index([createdAt])
+}
+
+model Vehicle {
+  id                 String        @id @default(cuid())
+  agencyId           String
+  agency             Agency        @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  branchId           String
+  branch             Branch        @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  registrationNumber String        @unique
+  brand              String
+  model              String
+  year               Int
+  color              String?
+  vehicleType        VehicleType   @default(OTHER)
+  seatCapacity       Int
+  status             VehicleStatus @default(ACTIVE)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  @@index([agencyId])
+  @@index([branchId])
+  @@index([status])
+  @@index([vehicleType])
 }
 
 model RefreshToken {

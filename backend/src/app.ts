@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit'
 import { env } from './config/env'
 import { authRouter } from './modules/auth/auth.routes'
 import { foundationRouter } from './routes/foundation.routes'
+import { vehiclesRouter } from './modules/vehicles/vehicles.routes'
 
 export const app = express()
 app.use(helmet())
@@ -15,6 +16,7 @@ app.use(cookieParser())
 app.use('/api/auth/login', rateLimit({ windowMs: 15 * 60 * 1000, limit: 10, standardHeaders: true }))
 app.use('/api/auth', authRouter)
 app.use('/api', foundationRouter)
+app.use('/api/vehicles', vehiclesRouter)
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', service: 'startafrik-api' }))
 
