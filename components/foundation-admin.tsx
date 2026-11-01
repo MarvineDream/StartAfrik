@@ -57,7 +57,7 @@ export default function FoundationAdmin() {
     setDataState("loading")
     const endpoint = view === "agencies" ? "/api/agencies" : view === "branches" ? "/api/branches" : view === "users" ? "/api/users" : view === "vehicles" ? "/api/vehicles" : view === "audit" ? "/api/audit" : null
     if (!endpoint) { setDataState("idle"); return }
-    api.request(endpoint).then((result) => { setRecords(Array.isArray(result) ? result : result.data || []); setDataState("idle") }).catch(() => setDataState("error"))
+    api.request(endpoint).then((result) => { setRecords(Array.isArray(result) ? result : result.items || result.data || []); setDataState("idle") }).catch(() => setDataState("error"))
   }, [api.token, view])
 
   async function handleLogin(event: React.FormEvent) {
